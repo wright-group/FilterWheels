@@ -1,0 +1,20 @@
+** Drc report for C:\Users\blais\Google Drive\Development\filter wheels\electronics\board\board.kicad_pcb **
+** Created on  **
+
+** Found 0 DRC errors **
+
+** Found 4 unconnected pads **
+ErrType(2): Unconnected pads
+    @ (290.830 mm,88.644 mm): Pad A4 on F.Cu, B.Cu, Internal, Non-copper of U1 net /0
+    @ (283.210 mm,137.160 mm): Pad 2 on F.Cu, B.Cu, Internal, Non-copper of P25
+ErrType(2): Unconnected pads
+    @ (308.610 mm,104.136 mm): Pad 12 on F.Cu, B.Cu, Internal, Non-copper of U1 net Net-(P22-Pad4)
+    @ (222.250 mm,104.140 mm): Pad 4 on F.Cu, B.Cu, Internal, Non-copper of P22
+ErrType(2): Unconnected pads
+    @ (278.130 mm,88.644 mm): Pad RST on F.Cu, B.Cu, Internal, Non-copper of U1 net Net-(U1-PadRST)
+    @ (278.130 mm,104.136 mm): Pad RST on F.Cu, B.Cu, Internal, Non-copper of U1
+ErrType(2): Unconnected pads
+    @ (283.210 mm,88.644 mm): Pad NC on F.Cu, B.Cu, Internal, Non-copper of U1 net Net-(U1-PadNC)
+    @ (285.750 mm,88.644 mm): Pad NC on F.Cu, B.Cu, Internal, Non-copper of U1
+
+** End of Report **
