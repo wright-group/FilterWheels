@@ -1,0 +1,11 @@
+DB9 cables
+index - identity - cable - motor
+1 - NC - Purple -
+2 - HOME - Yellow - Yellow
+3 - 5V - Blue - Red
+4 - GND - Green - Orange
+5 - NC - Brown -
+6 - B2 - White - BLU
+7 - B1 - Red - RED
+8 - A1 - Black - BLK
+9 - A2 - Orange - GRN
