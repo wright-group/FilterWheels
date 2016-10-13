@@ -1,0 +1,5 @@
+[0] Config.pm:343> INFO - This is Biber 2.5
+[0] Config.pm:346> INFO - Logfile is 'documentation.blg'
+[114] biber-MSWIN32:290> INFO - === 
+[699] Utils.pm:165> ERROR - Cannot find control file 'documentation.bcf'! - did you pass the "backend=biber" option to BibLaTeX?
+[699] Biber.pm:112> INFO - ERRORS: 1

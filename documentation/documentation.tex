@@ -1,0 +1,70 @@
+% document
+\documentclass[11pt]{article}
+\usepackage[letterpaper, portrait, margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{color}
+
+% text
+\usepackage[utf8]{inputenc}
+\setlength\parindent{0pt}
+\setlength{\parskip}{1em}
+\usepackage{enumitem}
+\renewcommand{\familydefault}{\sfdefault}
+\begin{document}
+	
+%title
+\begin{flushleft}
+	{\Huge \textbf{Filter Wheel Documentation}}
+\end{flushleft}
+
+%table of contents
+{\let\newpage\relax\begin{spacing}{0.1}\tableofcontents\end{spacing}}
+\pagebreak
+	
+\section{Introduction}\label{sec:introduction}
+
+Introduction here please.
+
+\pagebreak
+\section{Serial Interface}
+
+The filter wheel control box communicates with other devices through serial commands over USB.
+
+Each command has multiple components seperated by a single space. Commands must be terminated with a carriage return (\texttt{CR} - ASCII 015) and newline (\texttt{NL} - ASCII 012). The same termination is used when the controller responds.
+
+There are just four command syntaxes:
+
+\begin{center}
+	\begin{tabular}{r | l}
+		\texttt{M [motor index] [steps]} & move relative to current position \\ 
+		\texttt{H [motor index]} & home motor \\
+		\texttt{Q [motor index]} & query motor \\
+		\texttt{U [microstepping integer]} & set micro-stepping integer
+	\end{tabular}
+\end{center}
+
+The motors are zero-indexed, 0 through 5.
+
+\texttt{steps} can be positive or negative. Positive stepping rotates the wheel clockwise when facing the motor axle. \texttt{steps} is always an integer number of \textit{micro-steps}, so the angular motion will depend on the choice of micro-stepping integer.
+
+Home is defined as the first (micro)step that trips the optical interrupt when approaching clockwise. The controller implicitly handles the special case where the optical interrupt happens to be tripped initially.
+
+When a motor is queried, the controller will send back one of the following:
+
+\begin{center}
+	\begin{tabular}{r | l}
+		F & fault \\ 
+		R & ready \\
+		B & busy
+	\end{tabular}
+\end{center}
+
+Valid micro-stepping integers are 1, 2, 4, 8, 16, \& 32. The controller will default to 1 if an invalid value is set. The controller defaults to 1 during initialization if it is reset or power-cycled.
+
+Commands can be received by the controller at any time. The controller will start motor motion as soon as a command is received, moving motors simultaneously if appropriate. If a command is sent to a motor while \textit{that} motor is still completing the previous command, the new command will immediately replace the old instruction. In general one should use the query command to ensure that a motor is ready before giving it a new instruction.
+
+The controller will respond \texttt{INVALID} when bad commands are sent.
+
+
+
+\end{document}
