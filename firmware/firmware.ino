@@ -3,9 +3,8 @@
  * contributers:
  *   Blaise Thompson - blaise@untzag.com
  *
- * last modified 2016-10-12
+ * last modified 2016-10-13
  */
-
 
 // pins
 int S0 = A0;
@@ -44,7 +43,8 @@ void setup() {
   pinMode(D, OUTPUT);
   pinMode(M0, OUTPUT);
   pinMode(M1, OUTPUT);
-  pinMode(HOME, INPUT);
+  pinMode(HOME, INPUT_PULLUP);
+  pinMode(FAULT, INPUT_PULLUP);
   for (int i = 0; i < 6; i += 1) {
     pinMode(motors[i], OUTPUT);
   }
@@ -75,13 +75,12 @@ void loop() {
     }
   }
   delay(5);
-  //:Serial.println(millis());
+  //Serial.println(millis());
 }
-
 
 void serialEvent() {  // occurs whenever new data comes in the hardware serial RX
   // read serial into input char array
-  byte size = Serial.readBytes(input, INPUT_SIZE);
+  byte size = Serial.readBytesUntil('\n', input, INPUT_SIZE);
   input[size] = 0;
   // parse input
   char *code = strtok(input, sep);
@@ -121,7 +120,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
   }
   else if (*code == 'Q') {  // query motor status
     setSelect(index);
-    if (digitalRead(FAULT) == 1) Serial.println('F');
+    if (digitalRead(FAULT) == 0) Serial.println('F');
     else if (remaining[index] == 0) Serial.println('R');
     else Serial.println('B');
   }
