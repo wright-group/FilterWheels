@@ -8,7 +8,7 @@ from yaqd_core import ContinuousHardware, aserial
 from .__version__ import __branch__
 
 class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
-    _kind = "yaqd-wright-filter-wheels-continuous"
+    _kind = "wright-filter-wheels-continuous"
     _version = "0.1.0" + f"+{__branch__}" if __branch__ else ""
     traits: List[str] = ["uses-uart","uses-serial","is-homeable"]
     defaults: Dict[str, Any] = {"baud_rate": 57600}
@@ -78,4 +78,4 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
             # self._serial_port.write(b"G\n")
             # self._position = float(await self._serial_port.areadline())
             if self._busy:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(1)

@@ -29,8 +29,8 @@ mypy:
 entry:
   stage: test
   script:
-    - yaqd-yaqd-wright-filter-wheels-continuous --version
-    - yaqd-yaqd-wright-filter-wheels-continuous -h
+    - yaqd-wright-filter-wheels-continuous --version
+    - yaqd-wright-filter-wheels-continuous -h
 
 # deploy stage
 twine:

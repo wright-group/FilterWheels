@@ -37,7 +37,7 @@ setup(
     description="yaq daemon for Wright Group filter wheels",
     entry_points={
         "console_scripts": [
-            "yaqd-yaqd-wright-filter-wheels-continuous=wright_filter_wheels_continuous._yaqd_wright_filter_wheels_continuous:YaqdWrightFilterWheelsContinuous.main",
+            "yaqd-wright-filter-wheels-continuous=wright_filter_wheels_continuous._yaqd_wright_filter_wheels_continuous:YaqdWrightFilterWheelsContinuous.main",
         ],
     },
     install_requires=requirements,
@@ -47,10 +47,10 @@ setup(
     long_description_content_type="text/markdown",
     include_package_data=True,
     package_data=extra_files,
-    keywords="yaqd-wright-filter-wheels",
-    name="yaqd-wright-filter-wheels",
+    keywords="wright-filter-wheels",
+    name="wright-filter-wheels",
     packages=find_packages(include=["wright_filter_wheels_continuous", "wright_filter_wheels_continuous.*"]),
-    url="https://gitlab.com/yaq/yaqd-wright-filter-wheels",
+    url="https://gitlab.com/yaq/wright-filter-wheels",
     version=version,
     zip_safe=False,
 )
