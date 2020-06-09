@@ -56,14 +56,14 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
     async def _home(self):
         self._busy = True
         # Initiate the home
-        self._serial_port.write(b"H\n")
+        self._serial_port.write(f"H {self._motornum}\n".encode())
         await self._not_busy_sig.wait()
         self.set_position(self._destination)
 
     
     def set_microstep(self, microint):
         self._busy = True
-        if (microint == 1 | microint == 2 | microint ==4 | microint ==8 | microint == 16 | microint ==32):
+        if microint in [2**i for i in range(0,6)]:
             self._serial_port.write(f"U {microint}\n".encode())
             self.microstep=microint
         
@@ -71,11 +71,11 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
     async def update_state(self):
         while True:
             # Perform any updates to internal state
-            self._serial_port.write(b"Q\n")
+            self._serial_port.write(f"Q {self._motornum}\n".encode())
             line = await self._serial_port.areadline()
             self._busy = (line[0:1] != b"R")
-            # self.logger.debug(line[0:1])
+            # self.logger.debug(line[0:3])
             # self._serial_port.write(b"G\n")
             # self._position = float(await self._serial_port.areadline())
             if self._busy:
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.1)
