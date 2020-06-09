@@ -42,7 +42,7 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
         return state
 
     def _set_position(self, position):
-        step_position=int(round(self.microstep*position*self._steps_per_rotation/360,0))
+        step_position=round(self.microstep*position*self._steps_per_rotation/360)
         self._serial_port.write(f"M {self._motornum} {step_position}\n".encode())
 
     def direct_serial_write(self, message):
@@ -74,8 +74,7 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
             self._serial_port.write(f"Q {self._motornum}\n".encode())
             line = await self._serial_port.areadline()
             self._busy = (line[0:1] != b"R")
-            # self.logger.debug(line[0:3])
-            # self._serial_port.write(b"G\n")
-            # self._position = float(await self._serial_port.areadline())
+            # self.logger.debug(line[0:1])
+            
             if self._busy:
                 await asyncio.sleep(0.1)
