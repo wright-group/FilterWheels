@@ -19,6 +19,7 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
         self._serial_port = aserial.ASerial(config["serial_port"], config["baud_rate"])
         self.microstep=1
         self._steps_per_rotation=400
+        self.home()
 
 
     def _load_state(self, state):
@@ -42,8 +43,9 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
         return state
 
     def _set_position(self, position):
-        step_position=round(self.microstep*position*self._steps_per_rotation/360)
+        step_position=round(self.microstep*(position-self._position)*self._steps_per_rotation/360)
         self._serial_port.write(f"M {self._motornum} {step_position}\n".encode())
+        self._position=position
 
     def direct_serial_write(self, message):
         self._busy = True
@@ -58,7 +60,7 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
         # Initiate the home
         self._serial_port.write(f"H {self._motornum}\n".encode())
         await self._not_busy_sig.wait()
-        self.set_position(self._destination)
+        self._position=0
 
     
     def set_microstep(self, microint):
