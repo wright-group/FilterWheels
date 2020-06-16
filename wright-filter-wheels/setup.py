@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 here = pathlib.Path(__file__).parent
 
-with open(here / "wright_filter_wheels_continuous" / "VERSION") as version_file:
+with open(here / "wright_filter_wheels" / "VERSION") as version_file:
     version = version_file.read().strip()
 
 
@@ -15,10 +15,10 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 
-requirements = ["yaqd-core>=2020.05.1"]
+requirements = ["yaqd-core>=2020.06.1"]
 
 extra_requirements = {"dev": ["black", "pre-commit"]}
-extra_files = {"wright_filter_wheels_continuous": ["VERSION"]}
+extra_files = {"wright_filter_wheels": ["VERSION"]}
 
 setup(
     author="yaq Developers",
@@ -37,7 +37,8 @@ setup(
     description="yaq daemon for Wright Group filter wheels",
     entry_points={
         "console_scripts": [
-            "yaqd-wright-filter-wheels-continuous=wright_filter_wheels_continuous._yaqd_wright_filter_wheels_continuous:YaqdWrightFilterWheelsContinuous.main",
+            "yaqd-wright-filter-wheels-continuous=wright_filter_wheels._yaqd_wright_filter_wheels_continuous:YaqdWrightFilterWheelsContinuous.main",
+            "yaqd-wright-filter-wheels-discrete=wright_filter_wheels._yaqd_wright_filter_wheels_discrete:YaqdWrightFilterWheelsDiscrete.main",
         ],
     },
     install_requires=requirements,
@@ -49,8 +50,8 @@ setup(
     package_data=extra_files,
     keywords="wright-filter-wheels",
     name="wright-filter-wheels",
-    packages=find_packages(include=["wright_filter_wheels_continuous", "wright_filter_wheels_continuous.*"]),
-    url="https://gitlab.com/yaq/wright-filter-wheels",
+    packages=find_packages(include=["wright_filter_wheels", "wright_filter_wheels.*"]),
+    # url="https://gitlab.com/yaq/wright-filter-wheels",
     version=version,
     zip_safe=False,
 )

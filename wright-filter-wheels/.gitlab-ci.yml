@@ -31,7 +31,9 @@ entry:
   script:
     - yaqd-wright-filter-wheels-continuous --version
     - yaqd-wright-filter-wheels-continuous -h
-
+    - yaqd-wright-filter-wheels-discrete --version
+    - yaqd-wright-filter-wheels-discrete -h
+    
 # deploy stage
 twine:
   stage: deploy
@@ -43,3 +45,17 @@ twine:
       - dist/*
   only:
     - tags
+
+
+    mypy:
+  stage: test
+  script:
+    - mypy yaqd_newport
+entry:
+  stage: test
+  script:
+    - yaqd-newport-smc100 --version
+    - yaqd-newport-smc100 -h
+    - yaqd-newport-conex-agp --version
+    - yaqd-newport-conex-agp -h
+
