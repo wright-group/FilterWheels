@@ -2,7 +2,6 @@ __all__ = ["YaqdWrightFilterWheelsDiscrete"]
 
 import asyncio
 from typing import Dict, Any, List
-
 from yaqd_core import DiscreteHardware, aserial
 
 from .__version__ import __branch__
@@ -12,29 +11,17 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
     _version = "0.1.0" + f"+{__branch__}" if __branch__ else ""
     traits: List[str] = ["uses-uart","uses-serial","is-homeable"]
     defaults: Dict[str, Any] = {"baud_rate": 57600}
-    '''
-    defaults: Dict[str, Any] = {
-        "identifiers": {
-            "red": 667,
-            "orange": 613,
-            "yellow": 575,
-            "green": 540,
-            "blue": 470,
-            "violet": 425,
-        },
-    }
-    '''
+    
     def __init__(self, name, config, config_filepath):
         super().__init__(name, config, config_filepath)
         self._motornum=config["motor"]
         self._serial_port = aserial.ASerial(config["serial_port"], config["baud_rate"])
         self.microstep=1
         self._steps_per_rotation=400
-        self._num_filters=6
-        self._offset_from_home=config["offset"]   # degrees from home to center of first filter, in CW direction
-        self.degrees_per_filter=360/self._num_filters
-        self.identifiers=config["identifiers"]
-
+        self._current_identifier=""
+        self._offset=0  # try incorporating any adjustments to TOML before adjusting this
+        self._identifiers=config["identifiers"]
+        self.home()
 
 
     def _load_state(self, state):
@@ -57,14 +44,23 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
         state["value"] = self.value
         return state
 
-    def set_identifier(self):
-        pass
+    def set_offset(self,value):
+        self._offset=value
 
-    def get_identifier(self,position):
-        pass
+    def set_identifier(self,key):
+        position_temp=self._identifiers[key]
+        self.set_position(position_temp)
+        self._approximate_position=position_temp
+        self._current_identifier=key
+
+    def get_position_identifiers(self):
+        return self._identifiers 
+
+    def get_identifier(self):
+        return self._current_identifier
 
     def _set_position(self, position):
-        step_position=round(self.microstep*(position-self._position)*self._steps_per_rotation/360)
+        step_position=round(self.microstep*(position-self._position+self._offset)*self._steps_per_rotation/360)
         self._serial_port.write(f"M {self._motornum} {step_position}\n".encode())
         self._position=position
 
@@ -82,6 +78,8 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
         self._serial_port.write(f"H {self._motornum}\n".encode())
         await self._not_busy_sig.wait()
         self._position=0
+        self._approximate_position=0
+        self._current_identifier=""
 
     
     def set_microstep(self, microint):
@@ -97,7 +95,7 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
             self._serial_port.write(f"Q {self._motornum}\n".encode())
             line = await self._serial_port.areadline()
             self._busy = (line[0:1] != b"R")
-            self.logger.debug(self.identifiers)
-            await asyncio.sleep(2)
+            #self.logger.debug(self._identifiers)
+            #await asyncio.sleep(2)
             if self._busy:
                 await asyncio.sleep(0.1)
