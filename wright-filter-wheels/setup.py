@@ -50,7 +50,7 @@ setup(
     package_data=extra_files,
     keywords="wright-filter-wheels",
     name="wright-filter-wheels",
-    packages=find_packages(include=["wright_filter_wheels", "wright_filter_wheels.*"]),
+    packages=find_packages(include=["yaqd-wright-filter-wheels-continuous", "yaqd-wright-filter-wheels-continuous.*", "yaqd-wright-filter-wheels-discrete", "yaqd-wright-filter-wheels-discrete.*"]),
     # url="https://gitlab.com/yaq/wright-filter-wheels",
     version=version,
     zip_safe=False,

@@ -47,15 +47,3 @@ twine:
     - tags
 
 
-    mypy:
-  stage: test
-  script:
-    - mypy yaqd_newport
-entry:
-  stage: test
-  script:
-    - yaqd-newport-smc100 --version
-    - yaqd-newport-smc100 -h
-    - yaqd-newport-conex-agp --version
-    - yaqd-newport-conex-agp -h
-
