@@ -17,29 +17,15 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
         self._motornum=config["motor"]
         self._serial_port = aserial.ASerial(config["serial_port"], config["baud_rate"])
         self._microstep=config["microstep"]
+        self._units=config["units"]
         self._set_microstep(self._microstep)
-        time.sleep(0.1)
+        time.sleep(0.2)
         self._steps_per_rotation=400
-        self._position=0  
-        self._home()   # this will be removed once state TOML loads current position...may replace with home()
-        self._position_identifier = None # "
-                                            # "
-
-
-    def _load_state(self, state):
-        """Load an initial state from a dictionary (typically read from the state.toml file).
-
-        Must be tolerant of missing fields, including entirely empty initial states.
-
-        Parameters
-        ----------
-        state: dict
-            The saved state to load.
-        """
-        super()._load_state(state)
-        # This is an example to show the symetry between load and get
-        # If no persistent state is needed, these unctions can be deleted
-        self.value = state.get("value", 0)
+        #self._position=0  # this statement soon to be removed
+        #self._destination=0
+        #self.home()   # this statement also soon to be removed
+        #self._position_identifier = None # "
+                               
 
     def _set_position(self, position):
         step_position=round(self._microstep*(position-self._position+0)*self._steps_per_rotation/360)   # 0 is placeholder for poss. offset
@@ -58,7 +44,8 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
         self._busy = True
         self._serial_port.write(f"H {self._motornum}\n".encode())
         await self._not_busy_sig.wait()
-        self.set_position(self._position)
+        self._position=0
+        self.set_position(self._destination)
 
     def _set_microstep(self, microint):
         self._busy = True
@@ -72,13 +59,15 @@ class YaqdWrightFilterWheelsDiscrete(DiscreteHardware):
             self._serial_port.write(f"Q {self._motornum}\n".encode())
             line = await self._serial_port.areadline()
             self._busy = (line[0:1] != b"R")
-            #self.logger.debug(self._position_identifier)
-            await asyncio.sleep(0.2)
+            #self.logger.debug(self._destination)
+            await asyncio.sleep(1)
             if self._busy:
                 self._position_identifier = None
             else:
+                k1=None
                 for k,v in self._position_identifiers.items():
-                    if self._position == round(v):
-                        self._position_identifier = k
-                    else:
-                        self._position_identifier = None
+                    self.logger.debug(self._position)
+                    self.logger.debug(v)
+                    if round(self._position) == round(v):
+                        k1 = k
+                self._position_identifier=k1        
