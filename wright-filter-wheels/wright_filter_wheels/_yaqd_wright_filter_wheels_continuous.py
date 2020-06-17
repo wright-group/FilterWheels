@@ -18,12 +18,11 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
         self._motornum=config["motor"]
         self._serial_port = aserial.ASerial(config["serial_port"], config["baud_rate"])
         self._microstep=config["microstep"]
-        self._units=config["units"]
         self._set_microstep(self._microstep)
         time.sleep(0.1)
         self._steps_per_rotation=400
-        self._home()   # this will be removed once state TOML loads current position...may replace with home()
-        self._position=0            # "
+        self._position=0  # NB:  still WIP here 
+        self.home()            
 
     def _load_state(self, state):
         """Load an initial state from a dictionary (typically read from the state.toml file).
@@ -59,21 +58,18 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
     def home(self):
         loop = asyncio.get_event_loop()
         loop.create_task(self._home())
-        self._set_position(self._position)
-
+    
     async def _home(self):
         self._busy = True
         self._serial_port.write(f"H {self._motornum}\n".encode())
         await self._not_busy_sig.wait()
+        self.set_position(self._position)
     
     def _set_microstep(self, microint):
         self._busy = True
         if microint in [2**i for i in range(0,6)]:
             self._serial_port.write(f"U {microint}\n".encode())
             self._microstep=microint
-
-    def get_units(self):
-        return self._units        
 
     async def update_state(self):
         while True:
@@ -84,4 +80,4 @@ class YaqdWrightFilterWheelsContinuous(ContinuousHardware):
             # self.logger.debug(line[0:1])
             await asyncio.sleep(0.2)
             if self._busy:
-                await asyncio.sleep(0.2)
+                pass
