@@ -118,6 +118,24 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     setDirection(HIGH);
     remaining[index] = -1;
   }
+    else if (*code == 'Y') {  // home motor for Fuyu Linear stage
+    // home is defined as the location where the interrupt 
+    //   is first tripped moving to the highest limit
+    // first, we must handle the special case where the motor
+    //   is already at the interrupt
+    setSelect(index);
+    if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
+      // move 1/4 turn counter-clockwise
+      setDirection(HIGH);
+      for (i = 0; i <= 200*u; i++) {
+        stepMotor(index);
+        delay(5);
+      }
+    }
+    // now we set remaining to -1, a special code for home
+    setDirection(LOW);
+    remaining[index] = -1;
+  }
   else if (*code == 'Q') {  // query motor status
     setSelect(index);
     if (digitalRead(FAULT) == 0) Serial.println('F');
