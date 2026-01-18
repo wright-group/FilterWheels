@@ -1,10 +1,10 @@
-/* stepper motor driver
- *
- * contributers:
- *   Blaise Thompson - blaise@untzag.com
- *
- * last modified 2016-10-13
- */
+/* multiplexed stepper motor driver
+
+  * stepper controller boards use DRV8834 or similar
+  * TI CD74HC4351 multiplexes for steps and microsteps
+  * TI SN74HC259 latches motor direction
+
+*/
 
 // pins
 int S0 = A0;
@@ -21,7 +21,6 @@ int motors[6] = {2, 3, 4, 5, 6, 7};
 
 // variables
 int i = 0;  // for looping
-int num = 0;
 int u = 1;  // microstepping amount
 #define INPUT_SIZE 100  // TODO: make this a reasonable value
 #define sep " "
