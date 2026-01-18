@@ -65,7 +65,8 @@ void setup() {
 }
 
 void loop() {
-  now = millis();
+  unsigned long now = millis();
+
   if (now - prev >= 5){
     prev = now;
     for (i = 0; i <= 5; i++){
