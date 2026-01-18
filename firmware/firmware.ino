@@ -70,14 +70,19 @@ void loop() {
   if (now - prev >= 5){
     prev = now;
     for (i = 0; i <= 5; i++){
-      setSelect(i);
-      if (remaining[i] > 0) stepMotor(i), --remaining[i];
+      if (remaining[i] > 0) {
+        setSelect(i);
+        stepMotor(i);
+        --remaining[i];
+      }  
       else if (home_after[i]) { // ready to home after moving off interrupt
-        remaining[i] = -1;
+        setSelect(i);
         setDirection(HIGH);
         home_after[i] = false;
+        remaining[i] = -1;
       }
       if (remaining[i] == -1) {  // motor currently homing
+        setSelect(i);
         stepMotor(i);
         // interrupt is low when blocked
         if (digitalRead(HOME) == 0) remaining[i] = 0;
@@ -115,6 +120,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     //   is already at the interrupt
     setSelect(index);
     if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
+      // issue instruction to move 1/4 turn counter-clockwise
       setDirection(LOW);
       remaining[index] = abs(number);
       // set flag to home after this movement is done
