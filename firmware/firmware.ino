@@ -32,6 +32,7 @@ char c_number = '0';
 int index = 0;
 int number = 0;
 int remaining[6];
+unsigned long prev = 0;
 
 void setup() {
   // initialize pins
@@ -59,23 +60,25 @@ void setup() {
   setM();
   // initialize direction
   digitalWrite(D, LOW);
-  // initiate serial
   Serial.begin(57600);
   while (!Serial);  // do nothing, waiting for port to connect
 }
 
 void loop() {
-  for (i = 0; i <= 5; i++){
-    setSelect(i);
-    if (remaining[i] > 0) stepMotor(i), --remaining[i];
-    if (remaining[i] == -1) {  // motor currently homing
-      stepMotor(i);
-      // interrupt is low when blocked
-      if (digitalRead(HOME) == 0) remaining[i] = 0;
+  now = millis();
+  if (now - prev >= 5){
+    prev = now;
+    for (i = 0; i <= 5; i++){
+      setSelect(i);
+      if (remaining[i] > 0) stepMotor(i), --remaining[i];
+      }
+      if (remaining[i] == -1) {  // motor currently homing
+        stepMotor(i);
+        // interrupt is low when blocked
+        if (digitalRead(HOME) == 0) remaining[i] = 0;
+      }
     }
   }
-  delay(5);
-  //Serial.println(millis());
 }
 
 void serialEvent() {  // occurs whenever new data comes in the hardware serial RX
