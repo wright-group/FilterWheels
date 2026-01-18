@@ -32,6 +32,7 @@ char c_number = '0';
 int index = 0;
 int number = 0;
 int remaining[6];
+bool home_after[6] = {false, false, false, false, false, false};
 unsigned long prev = 0;
 
 void setup() {
@@ -71,6 +72,10 @@ void loop() {
     for (i = 0; i <= 5; i++){
       setSelect(i);
       if (remaining[i] > 0) stepMotor(i), --remaining[i];
+      else if (home_after[i]) { // ready to home after moving off interrupt
+        remaining[i] = -1;
+        setDirection(HIGH);
+        home_after[i] = false;
       }
       if (remaining[i] == -1) {  // motor currently homing
         stepMotor(i);
@@ -110,15 +115,15 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     //   is already at the interrupt
     setSelect(index);
     if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
-      // move 1/4 turn counter-clockwise
       setDirection(LOW);
-      for (i = 0; i <= 200*u; i++) {
-        stepMotor(index);
-        delay(5);
-      }
+      remaining[index] = abs(number);
+      // set flag to home after this movement is done
+      home_after[index] = true;
     }
-    // now we set remaining to -1, a special code for home
-    setDirection(HIGH);
+    // if interrupt is not blocked, we set remaining to -1, a special code for home
+    else {
+      setDirection(HIGH);
+    }
     remaining[index] = -1;
   }
   else if (*code == 'Q') {  // query motor status
