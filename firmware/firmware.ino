@@ -123,8 +123,8 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     // if interrupt is not blocked, we set remaining to -1, a special code for home
     else {
       setDirection(HIGH);
+      remaining[index] = -1;
     }
-    remaining[index] = -1;
   }
   else if (*code == 'Q') {  // query motor status
     setSelect(index);
