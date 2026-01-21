@@ -1,10 +1,12 @@
-/* stepper motor driver
+/* multiplexed stepper motor driver
  *
- * contributers:
- *   Blaise Thompson - blaise@untzag.com
+ * stepper controller boards use DRV8834 or similar
+ * TI CD74HC4351 multiplexes for steps and microsteps
+ * TI SN74HC259 latches motor direction
  *
- * last modified 2016-10-13
- */
+ * last modified 2026-01-21
+ *
+*/
 
 // pins
 int S0 = A0;
@@ -21,7 +23,6 @@ int motors[6] = {2, 3, 4, 5, 6, 7};
 
 // variables
 int i = 0;  // for looping
-int num = 0;
 int u = 1;  // microstepping amount
 #define INPUT_SIZE 100  // TODO: make this a reasonable value
 #define sep " "
@@ -32,6 +33,8 @@ char c_number = '0';
 int index = 0;
 int number = 0;
 int remaining[6];
+bool home_after[6] = {false, false, false, false, false, false};
+unsigned long prev = 0;
 
 void setup() {
   // initialize pins
@@ -59,23 +62,35 @@ void setup() {
   setM();
   // initialize direction
   digitalWrite(D, LOW);
-  // initiate serial
   Serial.begin(57600);
   while (!Serial);  // do nothing, waiting for port to connect
 }
 
 void loop() {
-  for (i = 0; i <= 5; i++){
-    setSelect(i);
-    if (remaining[i] > 0) stepMotor(i), --remaining[i];
-    if (remaining[i] == -1) {  // motor currently homing
-      stepMotor(i);
-      // interrupt is low when blocked
-      if (digitalRead(HOME) == 0) remaining[i] = 0;
+  // interval comparison avoids overflow issues
+  unsigned long waited = millis() - prev;
+
+  if (waited >= 5){
+    prev += waited;
+    for (i = 0; i <= 5; i++){
+      if (remaining[i] > 0) {
+        stepMotor(i);
+        --remaining[i];
+      }  
+      else if (home_after[i]) { // ready to home after moving off interrupt
+        setSelect(i);
+        setDirection(HIGH);
+        home_after[i] = false;
+        remaining[i] = -1;
+      }
+      if (remaining[i] == -1) {  // motor currently homing
+        setSelect(i);
+        stepMotor(i);
+        // interrupt is low when blocked
+        if (digitalRead(HOME) == 0) remaining[i] = 0;
+      }
     }
   }
-  delay(5);
-  //Serial.println(millis());
 }
 
 void serialEvent() {  // occurs whenever new data comes in the hardware serial RX
@@ -107,16 +122,17 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     //   is already at the interrupt
     setSelect(index);
     if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
-      // move 1/4 turn counter-clockwise
+      // issue instruction to move 1/4 turn counter-clockwise
       setDirection(LOW);
-      for (i = 0; i <= 200*u; i++) {
-        stepMotor(index);
-        delay(5);
-      }
+      remaining[index] = 100 * u;
+      // set flag to home after this movement is done
+      home_after[index] = true;
     }
-    // now we set remaining to -1, a special code for home
-    setDirection(HIGH);
-    remaining[index] = -1;
+    // if interrupt is not blocked, we set remaining to -1, a special code for home
+    else {
+      setDirection(HIGH);
+      remaining[index] = -1;
+    }
   }
   else if (*code == 'Q') {  // query motor status
     setSelect(index);
@@ -146,6 +162,7 @@ void setDirection(int dir) {
 }
 
 void setSelect(int index) {
+  // selection reveals HOME and DIR pins for a specific motor
   digitalWrite(S0, bitRead(index, 0));
   digitalWrite(S1, bitRead(index, 1));
   digitalWrite(S2, bitRead(index, 2));
