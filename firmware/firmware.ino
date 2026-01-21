@@ -122,7 +122,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
       // issue instruction to move 1/4 turn counter-clockwise
       setDirection(LOW);
-      remaining[index] = abs(number);
+      remaining[index] = 200 * u;
       // set flag to home after this movement is done
       home_after[index] = true;
     }
