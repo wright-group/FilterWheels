@@ -1,9 +1,11 @@
 /* multiplexed stepper motor driver
-
-  * stepper controller boards use DRV8834 or similar
-  * TI CD74HC4351 multiplexes for steps and microsteps
-  * TI SN74HC259 latches motor direction
-
+ *
+ * stepper controller boards use DRV8834 or similar
+ * TI CD74HC4351 multiplexes for steps and microsteps
+ * TI SN74HC259 latches motor direction
+ *
+ * last modified 2026-01-21
+ *
 */
 
 // pins
