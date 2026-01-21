@@ -1,3 +1,7 @@
+## Deprecation notice
+
+This set of daemons in outdated and unmaintained; instead, use the `wright-stepper-motor-box` kind found in [`yaqd-wright`](https://github.com/wright-group/yaqd-wright).
+
 # yaqd-wright-filter-wheels
 
 [![PyPI](https://img.shields.io/pypi/v/yaqd-wright-filter-wheels)](https://pypi.org/project/wright-filter-wheels)
