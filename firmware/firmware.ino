@@ -65,10 +65,11 @@ void setup() {
 }
 
 void loop() {
-  unsigned long now = millis();
+  // interval comparison avoids overflow issues
+  unsigned long waited = millis() - prev;
 
-  if (now - prev >= 5){
-    prev = now;
+  if (waited >= 5){
+    prev += waited;
     for (i = 0; i <= 5; i++){
       if (remaining[i] > 0) {
         setSelect(i);
