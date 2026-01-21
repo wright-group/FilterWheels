@@ -72,7 +72,6 @@ void loop() {
     prev += waited;
     for (i = 0; i <= 5; i++){
       if (remaining[i] > 0) {
-        setSelect(i);
         stepMotor(i);
         --remaining[i];
       }  
@@ -123,7 +122,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
       // issue instruction to move 1/4 turn counter-clockwise
       setDirection(LOW);
-      remaining[index] = 200 * u;
+      remaining[index] = 100 * u;
       // set flag to home after this movement is done
       home_after[index] = true;
     }
@@ -161,6 +160,7 @@ void setDirection(int dir) {
 }
 
 void setSelect(int index) {
+  // selection reveals HOME and DIR pins for a specific motor
   digitalWrite(S0, bitRead(index, 0));
   digitalWrite(S1, bitRead(index, 1));
   digitalWrite(S2, bitRead(index, 2));
