@@ -24,6 +24,7 @@ int motors[6] = {2, 3, 4, 5, 6, 7};
 // variables
 int i = 0;  // for looping
 int u = 1;  // microstepping amount
+int selected = 0; // selected motor
 #define INPUT_SIZE 100  // TODO: make this a reasonable value
 #define sep " "
 char input[INPUT_SIZE + 1];
@@ -67,6 +68,8 @@ void setup() {
 }
 
 void loop() {
+  // each loop we check all motors and perform a step on each line if needed
+
   // interval comparison avoids overflow issues
   unsigned long waited = millis() - prev;
 
@@ -76,18 +79,23 @@ void loop() {
       if (remaining[i] > 0) {
         stepMotor(i);
         --remaining[i];
-      }  
+      }
       else if (home_after[i]) { // ready to home after moving off interrupt
         setSelect(i);
         setDirection(HIGH);
         home_after[i] = false;
         remaining[i] = -1;
       }
-      if (remaining[i] == -1) {  // motor currently homing
-        setSelect(i);
+      else if (remaining[i] == -1) {  // motor currently homing
         stepMotor(i);
         // interrupt is low when blocked
-        if (digitalRead(HOME) == 0) remaining[i] = 0;
+        setSelect(i);
+        int homed = digitalRead(HOME);
+        // read homed again to make sure
+        if (homed == 0) {
+          delay(2);
+          if (homed == 0) remaining[i] = 0;
+        }
       }
     }
   }
@@ -135,10 +143,17 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     }
   }
   else if (*code == 'Q') {  // query motor status
-    setSelect(index);
-    if (digitalRead(FAULT) == 0) Serial.println('F');
-    else if (remaining[index] == 0) Serial.println('R');
+    // // ignore faults for now
+    // setSelect(index);
+    // if (digitalRead(FAULT) == 0) Serial.println('F');
+    if (remaining[index] == 0 and not home_after[index]) Serial.println('R');
     else Serial.println('B');
+  }
+  else if (*code == '?') {
+    setSelect(index);
+    if (digitalRead(HOME)==0) Serial.println('H');
+    else Serial.println('N');
+    Serial.println(String(remaining[index]));
   }
   else if (*code == 'U') {  // set microstep integer
     u = index;
@@ -152,20 +167,25 @@ void serialEventRun(void) {
 }
 
 void setDirection(int dir) {
-  // direction is latched in using TI SN74HC259
   // facing the motor...
   //   LOW = counter clockwise
   //   HIGH = clockwise
   digitalWrite(G, LOW);  // allow value to be written
+  delayMicroseconds(50);
   digitalWrite(D, dir);
+  delayMicroseconds(50);
   digitalWrite(G, HIGH);  // lock in value
 }
 
 void setSelect(int index) {
   // selection reveals HOME and DIR pins for a specific motor
-  digitalWrite(S0, bitRead(index, 0));
-  digitalWrite(S1, bitRead(index, 1));
-  digitalWrite(S2, bitRead(index, 2));
+  if (index != selected) {
+    digitalWrite(S0, bitRead(index, 0));
+    digitalWrite(S1, bitRead(index, 1));
+    digitalWrite(S2, bitRead(index, 2));
+    delayMicroseconds(50);
+    selected = index;
+  }
 }
 
 void setM() {
@@ -208,7 +228,7 @@ void setM() {
 
 void stepMotor(int index) {
   digitalWrite(motors[index], HIGH);
-  delay(1);
+  delay(2);
   digitalWrite(motors[index], LOW);
 }
 
