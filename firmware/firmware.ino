@@ -36,6 +36,10 @@ int number = 0;
 int remaining[6];
 bool home_after[6] = {false, false, false, false, false, false};
 unsigned long prev = 0;
+int interval = 5;  // wait time for main loop; can be extended if needed
+int default_interval = 5;  
+int homed = false;
+int ms_step = 2;  // delay between up and down steps
 
 void setup() {
   // initialize pins
@@ -73,8 +77,9 @@ void loop() {
   // interval comparison avoids overflow issues
   unsigned long waited = millis() - prev;
 
-  if (waited >= 5){
+  if (waited >= interval){
     prev += waited;
+    interval = default_interval;  // reset interval
     for (i = 0; i <= 5; i++){
       if (remaining[i] > 0) {
         stepMotor(i);
@@ -90,12 +95,8 @@ void loop() {
         stepMotor(i);
         // interrupt is low when blocked
         setSelect(i);
-        int homed = digitalRead(HOME);
-        // read homed again to make sure
-        if (homed == 0) {
-          delay(2);
-          if (homed == 0) remaining[i] = 0;
-        }
+        // read homed twice to make sure
+        if (carefulReadHome()) remaining[i] = 0;
       }
     }
   }
@@ -129,7 +130,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     // first, we must handle the special case where the motor
     //   is already at the interrupt
     setSelect(index);
-    if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
+    if (carefulReadHome()) {  // interrupt is low when blocked
       // issue instruction to move 1/4 turn counter-clockwise
       setDirection(LOW);
       remaining[index] = 100 * u;
@@ -171,9 +172,7 @@ void setDirection(int dir) {
   //   LOW = counter clockwise
   //   HIGH = clockwise
   digitalWrite(G, LOW);  // allow value to be written
-  delayMicroseconds(50);
   digitalWrite(D, dir);
-  delayMicroseconds(50);
   digitalWrite(G, HIGH);  // lock in value
 }
 
@@ -183,9 +182,26 @@ void setSelect(int index) {
     digitalWrite(S0, bitRead(index, 0));
     digitalWrite(S1, bitRead(index, 1));
     digitalWrite(S2, bitRead(index, 2));
-    delayMicroseconds(50);
     selected = index;
   }
+}
+
+bool carefulReadHome() {
+  // blocking, careful measurement of HOME status
+  // wait for 5 consistent measurements (with delay)
+  while (true) {
+    homed = 0;
+    for (i = 0; i < 5; i++){
+      delay(1);
+      homed += digitalRead(HOME);
+      Serial.println(String(homed));
+    }
+    if (homed % 5 == 0) break;
+    else Serial.println("retry");  // how often does this happen?
+  }
+  if (homed == 5) Serial.println("I am not homed!");
+  else Serial.println("I am homed!");
+  return (homed == 0);
 }
 
 void setM() {
@@ -228,7 +244,10 @@ void setM() {
 
 void stepMotor(int index) {
   digitalWrite(motors[index], HIGH);
-  delay(2);
+  delay(ms_step);
   digitalWrite(motors[index], LOW);
+  // ensure we have a minimum delay equal to the delay between HIGH and LOW writing
+  // BUG: if we are already late, we may not actually add enough to interval
+  if ((millis() - prev) <= ms_step) interval = (millis() - prev) + ms_step;
 }
 
