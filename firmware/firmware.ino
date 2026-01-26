@@ -21,8 +21,10 @@ int HOME = 11;
 int FAULT = 12;
 int motors[6] = {2, 3, 4, 5, 6, 7};
 
+
 // variables
 int i = 0;  // for looping
+int j = 0;  // second loop variable
 int u = 1;  // microstepping amount
 int selected = 0; // selected motor
 #define INPUT_SIZE 100  // TODO: make this a reasonable value
@@ -84,7 +86,9 @@ void loop() {
       if (remaining[i] > 0) {
         stepMotor(i);
         --remaining[i];
+        Serial.println(String(remaining[i]));
       }
+
       else if (home_after[i]) { // ready to home after moving off interrupt
         setSelect(i);
         setDirection(HIGH);
@@ -96,7 +100,7 @@ void loop() {
         // interrupt is low when blocked
         setSelect(i);
         // read homed twice to make sure
-        if (carefulReadHome()) remaining[i] = 0;
+        if (carefulReadHome()) remaining[i] = 1; // go one past the limit to avoid unstable readings
       }
     }
   }
@@ -104,6 +108,7 @@ void loop() {
 
 void serialEvent() {  // occurs whenever new data comes in the hardware serial RX
   // read serial into input char array
+  Serial.println("serial event");
   byte size = Serial.readBytesUntil('\n', input, INPUT_SIZE);
   input[size] = 0;
   // parse input
@@ -117,6 +122,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     Serial.println("INVALID");
     return;
   }
+  Serial.println(String(index));
   // call appropriate function
   if (*code == 'M') {  // move relative
     setSelect(index);
@@ -162,6 +168,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
   }
 }
 
+
 void serialEventRun(void) {
   // this runs inside of the main loop, essentially
   if (Serial.available()) serialEvent();
@@ -191,7 +198,7 @@ bool carefulReadHome() {
   // wait for 5 consistent measurements (with delay)
   while (true) {
     homed = 0;
-    for (i = 0; i < 5; i++){
+    for (j = 0; j < 5; j++){
       delay(1);
       homed += digitalRead(HOME);
       Serial.println(String(homed));
@@ -199,8 +206,8 @@ bool carefulReadHome() {
     if (homed % 5 == 0) break;
     else Serial.println("retry");  // how often does this happen?
   }
-  if (homed == 5) Serial.println("I am not homed!");
-  else Serial.println("I am homed!");
+  if (homed == 5) Serial.println("HOME=HIGH");
+  else Serial.println("HOME=LOW");
   return (homed == 0);
 }
 
@@ -246,8 +253,8 @@ void stepMotor(int index) {
   digitalWrite(motors[index], HIGH);
   delay(ms_step);
   digitalWrite(motors[index], LOW);
+  interval += ms_step;  // ensure time between the low-to-high step
   // ensure we have a minimum delay equal to the delay between HIGH and LOW writing
   // BUG: if we are already late, we may not actually add enough to interval
-  if ((millis() - prev) <= ms_step) interval = (millis() - prev) + ms_step;
 }
 
