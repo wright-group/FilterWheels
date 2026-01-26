@@ -86,7 +86,7 @@ void loop() {
       if (remaining[i] > 0) {
         stepMotor(i);
         --remaining[i];
-        Serial.println(String(remaining[i]));
+        // Serial.println(String(remaining[i]));
       }
 
       else if (home_after[i]) { // ready to home after moving off interrupt
@@ -108,7 +108,7 @@ void loop() {
 
 void serialEvent() {  // occurs whenever new data comes in the hardware serial RX
   // read serial into input char array
-  Serial.println("serial event");
+  // Serial.println("serial event");
   byte size = Serial.readBytesUntil('\n', input, INPUT_SIZE);
   input[size] = 0;
   // parse input
@@ -122,7 +122,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     Serial.println("INVALID");
     return;
   }
-  Serial.println(String(index));
+  // Serial.println(String(index));
   // call appropriate function
   if (*code == 'M') {  // move relative
     setSelect(index);
@@ -156,10 +156,10 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     if (remaining[index] == 0 and not home_after[index]) Serial.println('R');
     else Serial.println('B');
   }
-  else if (*code == '?') {
+  else if (*code == '?') { // special code for debug
     setSelect(index);
-    if (digitalRead(HOME)==0) Serial.println('H');
-    else Serial.println('N');
+    if (digitalRead(HOME)==0) Serial.println('HOME=LOW');
+    else Serial.println('HOME=HIGH');
     Serial.println(String(remaining[index]));
   }
   else if (*code == 'U') {  // set microstep integer
@@ -201,13 +201,13 @@ bool carefulReadHome() {
     for (j = 0; j < 5; j++){
       delay(1);
       homed += digitalRead(HOME);
-      Serial.println(String(homed));
+      // Serial.println(String(homed));
     }
     if (homed % 5 == 0) break;
-    else Serial.println("retry");  // how often does this happen?
+    // else Serial.println("retry");  // how often does this happen?
   }
-  if (homed == 5) Serial.println("HOME=HIGH");
-  else Serial.println("HOME=LOW");
+  // if (homed == 5) Serial.println("HOME=HIGH");
+  // else Serial.println("HOME=LOW");
   return (homed == 0);
 }
 
