@@ -24,9 +24,13 @@ int motors[6] = {2, 3, 4, 5, 6, 7};
 
 // variables
 int i = 0;  // for looping
-int j = 0;  // second loop variable
+int j = 0;  // for nested loop
 int u = 1;  // microstepping amount
 int selected = 0; // selected motor
+bool home_after[6] = {false, false, false, false, false, false};
+unsigned long prev = 0;  // for keeping tme
+int homed = false;  // for carefulReadHome
+int ms_step = 4;  // delay for up -> down steps; delay between down -> up is at least this long
 #define INPUT_SIZE 100  // TODO: make this a reasonable value
 #define sep " "
 char input[INPUT_SIZE + 1];
@@ -36,12 +40,6 @@ char c_number = '0';
 int index = 0;
 int number = 0;
 int remaining[6];
-bool home_after[6] = {false, false, false, false, false, false};
-unsigned long prev = 0;
-int interval = 5;  // wait time for main loop; can be extended if needed
-int default_interval = 5;  
-int homed = false;
-int ms_step = 2;  // delay between up and down steps
 
 void setup() {
   // initialize pins
@@ -79,9 +77,8 @@ void loop() {
   // interval comparison avoids overflow issues
   unsigned long waited = millis() - prev;
 
-  if (waited >= interval){
+  if (waited >= ms_step){
     prev += waited;
-    interval = default_interval;  // reset interval
     for (i = 0; i <= 5; i++){
       if (remaining[i] > 0) {
         stepMotor(i);
@@ -100,7 +97,7 @@ void loop() {
         // interrupt is low when blocked
         setSelect(i);
         // read homed twice to make sure
-        if (carefulReadHome()) remaining[i] = 1; // go one past the limit to avoid unstable readings
+        if (carefulReadHome()) remaining[i] = 1*u; // go one past the limit to avoid unstable readings
       }
     }
   }
@@ -133,6 +130,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
   else if (*code == 'H') {  // home motor
     // home is defined as the location where the interrupt 
     //   is first tripped when approaching clockwise
+    //   (technically, we go one full step after the first tripped position)
     // first, we must handle the special case where the motor
     //   is already at the interrupt
     setSelect(index);
@@ -194,7 +192,7 @@ void setSelect(int index) {
 }
 
 bool carefulReadHome() {
-  // blocking, careful measurement of HOME status
+  // measure HOME carefully
   // wait for 5 consistent measurements (with delay)
   while (true) {
     homed = 0;
@@ -253,8 +251,6 @@ void stepMotor(int index) {
   digitalWrite(motors[index], HIGH);
   delay(ms_step);
   digitalWrite(motors[index], LOW);
-  interval += ms_step;  // ensure time between the low-to-high step
-  // ensure we have a minimum delay equal to the delay between HIGH and LOW writing
-  // BUG: if we are already late, we may not actually add enough to interval
+  prev = millis();  // reset timer to ensure there is an appropriate delay between the HIGH and LOW write
 }
 
