@@ -21,9 +21,16 @@ int HOME = 11;
 int FAULT = 12;
 int motors[6] = {2, 3, 4, 5, 6, 7};
 
+
 // variables
 int i = 0;  // for looping
+int j = 0;  // for nested loop
 int u = 1;  // microstepping amount
+int selected = 0; // selected motor
+bool home_after[6] = {false, false, false, false, false, false};
+unsigned long prev = 0;  // for keeping tme
+int homed = false;  // for carefulReadHome
+int ms_step = 4;  // delay for up -> down steps; delay between down -> up is at least this long
 #define INPUT_SIZE 100  // TODO: make this a reasonable value
 #define sep " "
 char input[INPUT_SIZE + 1];
@@ -33,8 +40,6 @@ char c_number = '0';
 int index = 0;
 int number = 0;
 int remaining[6];
-bool home_after[6] = {false, false, false, false, false, false};
-unsigned long prev = 0;
 
 void setup() {
   // initialize pins
@@ -67,27 +72,32 @@ void setup() {
 }
 
 void loop() {
+  // each loop we check all motors and perform a step on each line if needed
+
   // interval comparison avoids overflow issues
   unsigned long waited = millis() - prev;
 
-  if (waited >= 5){
+  if (waited >= ms_step){
     prev += waited;
     for (i = 0; i <= 5; i++){
       if (remaining[i] > 0) {
         stepMotor(i);
         --remaining[i];
-      }  
+        // Serial.println(String(remaining[i]));
+      }
+
       else if (home_after[i]) { // ready to home after moving off interrupt
         setSelect(i);
         setDirection(HIGH);
         home_after[i] = false;
         remaining[i] = -1;
       }
-      if (remaining[i] == -1) {  // motor currently homing
-        setSelect(i);
+      else if (remaining[i] == -1) {  // motor currently homing
         stepMotor(i);
         // interrupt is low when blocked
-        if (digitalRead(HOME) == 0) remaining[i] = 0;
+        setSelect(i);
+        // read homed twice to make sure
+        if (carefulReadHome()) remaining[i] = 1*u; // go one past the limit to avoid unstable readings
       }
     }
   }
@@ -95,6 +105,7 @@ void loop() {
 
 void serialEvent() {  // occurs whenever new data comes in the hardware serial RX
   // read serial into input char array
+  // Serial.println("serial event");
   byte size = Serial.readBytesUntil('\n', input, INPUT_SIZE);
   input[size] = 0;
   // parse input
@@ -108,6 +119,7 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     Serial.println("INVALID");
     return;
   }
+  // Serial.println(String(index));
   // call appropriate function
   if (*code == 'M') {  // move relative
     setSelect(index);
@@ -118,10 +130,11 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
   else if (*code == 'H') {  // home motor
     // home is defined as the location where the interrupt 
     //   is first tripped when approaching clockwise
+    //   (technically, we go one full step after the first tripped position)
     // first, we must handle the special case where the motor
     //   is already at the interrupt
     setSelect(index);
-    if (digitalRead(HOME) == 0) {  // interrupt is low when blocked
+    if (carefulReadHome()) {  // interrupt is low when blocked
       // issue instruction to move 1/4 turn counter-clockwise
       setDirection(LOW);
       remaining[index] = 100 * u;
@@ -135,10 +148,17 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
     }
   }
   else if (*code == 'Q') {  // query motor status
-    setSelect(index);
-    if (digitalRead(FAULT) == 0) Serial.println('F');
-    else if (remaining[index] == 0) Serial.println('R');
+    // // ignore faults for now
+    // setSelect(index);
+    // if (digitalRead(FAULT) == 0) Serial.println('F');
+    if (remaining[index] == 0 and not home_after[index]) Serial.println('R');
     else Serial.println('B');
+  }
+  else if (*code == '?') { // special code for debug
+    setSelect(index);
+    if (digitalRead(HOME)==0) Serial.println('HOME=LOW');
+    else Serial.println('HOME=HIGH');
+    Serial.println(String(remaining[index]));
   }
   else if (*code == 'U') {  // set microstep integer
     u = index;
@@ -146,13 +166,13 @@ void serialEvent() {  // occurs whenever new data comes in the hardware serial R
   }
 }
 
+
 void serialEventRun(void) {
   // this runs inside of the main loop, essentially
   if (Serial.available()) serialEvent();
 }
 
 void setDirection(int dir) {
-  // direction is latched in using TI SN74HC259
   // facing the motor...
   //   LOW = counter clockwise
   //   HIGH = clockwise
@@ -163,9 +183,30 @@ void setDirection(int dir) {
 
 void setSelect(int index) {
   // selection reveals HOME and DIR pins for a specific motor
-  digitalWrite(S0, bitRead(index, 0));
-  digitalWrite(S1, bitRead(index, 1));
-  digitalWrite(S2, bitRead(index, 2));
+  if (index != selected) {
+    digitalWrite(S0, bitRead(index, 0));
+    digitalWrite(S1, bitRead(index, 1));
+    digitalWrite(S2, bitRead(index, 2));
+    selected = index;
+  }
+}
+
+bool carefulReadHome() {
+  // measure HOME carefully
+  // wait for 5 consistent measurements (with delay)
+  while (true) {
+    homed = 0;
+    for (j = 0; j < 5; j++){
+      delay(1);
+      homed += digitalRead(HOME);
+      // Serial.println(String(homed));
+    }
+    if (homed % 5 == 0) break;
+    // else Serial.println("retry");  // how often does this happen?
+  }
+  // if (homed == 5) Serial.println("HOME=HIGH");
+  // else Serial.println("HOME=LOW");
+  return (homed == 0);
 }
 
 void setM() {
@@ -208,7 +249,8 @@ void setM() {
 
 void stepMotor(int index) {
   digitalWrite(motors[index], HIGH);
-  delay(1);
+  delay(ms_step);
   digitalWrite(motors[index], LOW);
+  prev = millis();  // reset timer to ensure there is an appropriate delay between the HIGH and LOW write
 }
 
